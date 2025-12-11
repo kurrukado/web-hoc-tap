@@ -12,15 +12,36 @@ import io
 st.set_page_config(page_title="Hệ Thống Hỗ Trợ Học Tập", layout="wide", page_icon="📚")
 
 # --- CẤU HÌNH API ---
+# --- CẤU HÌNH API & CHỌN MODEL ---
 try:
     if "GOOGLE_API_KEY" in st.secrets:
         api_key = st.secrets["GOOGLE_API_KEY"]
     else:
         api_key = st.sidebar.text_input("Nhập Google API Key:", type="password")
 
+    # [MỚI] Thêm hộp chọn Model ngay dưới chỗ nhập API Key
     if api_key:
+        # Danh sách các model miễn phí hiện có của Google
+        model_options = [
+            "gemini-1.5-flash",       # Nhanh, nhẹ, limit cao (Khuyên dùng)
+            "gemini-1.5-pro",         # Thông minh hơn, nhưng limit thấp hơn
+            "gemini-2.0-flash-exp",   # Bản thử nghiệm mới nhất (nếu có)
+            "gemini-1.0-pro"          # Bản cũ, dùng chống cháy
+        ]
+        
+        selected_model = st.sidebar.selectbox(
+            "🤖 Chọn Mô hình (Model):", 
+            model_options,
+            index=0 # Mặc định chọn cái đầu tiên
+        )
+        
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-2.5-flash')
+        
+        # Khởi tạo model dựa trên lựa chọn của người dùng
+        model = genai.GenerativeModel(selected_model)
+        
+        st.sidebar.success(f"Đang dùng: {selected_model}")
+        
 except Exception as e:
     st.error(f"Lỗi cấu hình: {e}")
 
