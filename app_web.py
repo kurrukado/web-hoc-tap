@@ -4,16 +4,13 @@ from pypdf import PdfReader
 import json
 
 # Cấu hình trang
-st.set_page_config(page_title="AI Ôn Tập Online", layout="wide", page_icon="🌐")
+st.set_page_config(page_title="AI Ôn Tập Online", layout="wide", page_icon="🧠")
 
-# --- QUẢN LÝ API KEY AN TOÀN TRÊN CLOUD ---
-# Khi chạy trên máy cá nhân, nó sẽ tìm trong file .streamlit/secrets.toml
-# Khi chạy trên Cloud, ta sẽ cấu hình trong phần cài đặt của web
+# --- CẤU HÌNH API KEY ---
 try:
     if "GOOGLE_API_KEY" in st.secrets:
         api_key = st.secrets["GOOGLE_API_KEY"]
     else:
-        # Nếu chạy local mà chưa cài secrets, hiện ô nhập tạm
         api_key = st.sidebar.text_input("Nhập Google API Key:", type="password")
 
     if api_key:
@@ -22,7 +19,7 @@ try:
 except Exception as e:
     st.error(f"Lỗi cấu hình: {e}")
 
-# --- CÁC HÀM XỬ LÝ (Giữ nguyên logic cũ) ---
+# --- CÁC HÀM XỬ LÝ ---
 def doc_pdf(file_upload):
     try:
         reader = PdfReader(file_upload)
@@ -39,13 +36,21 @@ def lay_json(text):
     e = text.rfind("]") + 1
     return text[s:e] if s != -1 and e != -1 else text
 
+def lay_dot_code(text):
+    """Làm sạch mã Graphviz DOT từ phản hồi của AI"""
+    text = text.replace("```dot", "").replace("```graphviz", "").replace("```", "").strip()
+    # Tìm điểm bắt đầu digraph
+    s = text.find("digraph")
+    if s != -1:
+        return text[s:]
+    return text
+
 # --- GIAO DIỆN CHÍNH ---
-st.title("🌐 Hệ Thống Ôn Tập Mọi Lúc Mọi Nơi")
+st.title("🧠 Hệ Thống Ôn Tập Thông Minh")
 
 with st.sidebar:
     st.header("📂 Nạp tài liệu")
-    # Cho phép chọn NHIỀU FILE cùng lúc
-    uploaded_files = st.file_uploader("Chọn tất cả file PDF của bạn:", type=['pdf'], accept_multiple_files=True)
+    uploaded_files = st.file_uploader("Chọn file PDF:", type=['pdf'], accept_multiple_files=True)
     
     if uploaded_files:
         if st.button("🔄 Xử lý tài liệu"):
@@ -64,13 +69,14 @@ with st.sidebar:
 
     if 'ds_file' in st.session_state:
         st.write("---")
-        st.write("📄 **File đang học:**")
+        st.caption("Đang học từ:")
         for f in st.session_state['ds_file']:
-            st.caption(f"- {f}")
+            st.write(f"- {f}")
 
-# --- PHẦN CHỨC NĂNG (CHAT, QUIZ, CARD) ---
+# --- PHẦN CHỨC NĂNG ---
 if 'noi_dung' in st.session_state:
-    tab1, tab2, tab3 = st.tabs(["💬 Chat", "📝 Trắc Nghiệm", "🗂️ Flashcards"])
+    # Thêm Tab 4: Sơ Đồ Tư Duy
+    tab1, tab2, tab3, tab4 = st.tabs(["💬 Chat", "📝 Trắc Nghiệm", "🗂️ Flashcards", "🧠 Sơ Đồ Tư Duy"])
 
     # TAB 1: CHAT
     with tab1:
@@ -84,46 +90,4 @@ if 'noi_dung' in st.session_state:
                 try:
                     res = model.generate_content(f"Dựa vào tài liệu:\n{st.session_state['noi_dung']}\nTrả lời: {p}")
                     st.markdown(res.text)
-                    st.session_state.msg.append({"role": "assistant", "content": res.text})
-                except: st.error("Chưa có API Key hoặc lỗi mạng.")
-
-    # TAB 2: QUIZ
-    with tab2:
-        col1, col2 = st.columns([1,3])
-        sl = col1.number_input("Số câu", 1, 50, 5)
-        if col2.button("Tạo Đề"):
-            with st.spinner("Đang tạo..."):
-                try:
-                    p = f"Tạo {sl} câu trắc nghiệm JSON list: [{{'question':'...','options':['A...'],'correct':'A','explain':'...'}}]"
-                    res = model.generate_content(f"{p}\nNội dung: {st.session_state['noi_dung']}")
-                    st.session_state['quiz'] = json.loads(lay_json(res.text))
-                except: st.error("Thử lại nhé!")
-        
-        if 'quiz' in st.session_state:
-            score = 0
-            for i, q in enumerate(st.session_state['quiz']):
-                st.divider()
-                st.markdown(f"**{i+1}.** {q['question']}")
-                ch = st.radio("Chọn:", q['options'], key=f"q{i}", index=None)
-                if ch:
-                    if ch[0] == q['correct'][0]:
-                        st.success("Đúng!")
-                        score+=1
-                    else: st.error(f"Sai. Đáp án: {q['correct']}")
-                    with st.expander("Giải thích"): st.write(q['explain'])
-            st.info(f"Điểm: {score}/{len(st.session_state['quiz'])}")
-
-    # TAB 3: FLASHCARDS
-    with tab3:
-        if st.button("Tạo Flashcards"):
-            with st.spinner("Đang tạo..."):
-                try:
-                    p = "Tạo 10 thẻ JSON list: [{'q':'...','a':'...'}]"
-                    res = model.generate_content(f"{p}\nNội dung: {st.session_state['noi_dung']}")
-                    st.session_state['fc'] = json.loads(lay_json(res.text))
-                except: st.error("Lỗi tạo thẻ.")
-        if 'fc' in st.session_state:
-            for c in st.session_state['fc']:
-                with st.expander(c.get('q','?')): st.info(c.get('a','!'))
-else:
-    st.info("👈 Tải file PDF lên để bắt đầu.")
+                    st.session_
