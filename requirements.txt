@@ -2,3 +2,7 @@ streamlit
 google-generativeai
 pypdf
 graphviz
+pandas
+openpyxl
+python-docx
+python-pptx
