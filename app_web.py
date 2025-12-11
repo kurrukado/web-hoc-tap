@@ -242,3 +242,4 @@ if 'noi_dung' in st.session_state:
             except: st.error("Mã hình lỗi.")
 else:
     st.info("👈 Tải file PDF, Word, Excel, PowerPoint hoặc ZIP lên để học!")
+    st.info("Tải lại trang sẽ mất file đã up, tải app Streamlit để lưu dữ liệu cần thiết")
