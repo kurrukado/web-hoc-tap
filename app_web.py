@@ -23,10 +23,10 @@ try:
     if api_key:
         # Danh sách các model miễn phí hiện có của Google
         model_options = [
-            "gemini-1.5-flash",       # Nhanh, nhẹ, limit cao (Khuyên dùng)
-            "gemini-1.5-pro",         # Thông minh hơn, nhưng limit thấp hơn
-            "gemini-2.0-flash-exp",   # Bản thử nghiệm mới nhất (nếu có)
-            "gemini-1.0-pro"          # Bản cũ, dùng chống cháy
+            "gemini-2.5-flash",       # Nhanh, nhẹ, limit cao (Khuyên dùng)
+            "gemini-2.5-flash-lite",         # Thông minh hơn, nhưng limit thấp hơn
+            "gemini-2.5-flash-tts",   # Bản thử nghiệm mới nhất (nếu có)
+                      # Bản cũ, dùng chống cháy
         ]
         
         selected_model = st.sidebar.selectbox(
