@@ -212,35 +212,6 @@ if 'noi_dung' in st.session_state:
 
     # 3. FLASHCARDS
     with t3:
-        st.markdown("""
-            <style>
-            /* Giải thích selector:
-               1. div[data-testid="column"]:nth-of-type(2): Tìm cột thứ 2 trên màn hình
-               2. .stButton > button: Tìm nút bấm nằm trong cột đó
-            */
-            div[data-testid="column"]:nth-of-type(2) .stButton > button {
-                width: 100%;             /* Chiều rộng */
-                background: linear-gradient(to right, #4CAF50, #2E8B57); /* Màu chuyển sắc (Gradient) */
-                color: white;            /* Màu chữ */
-                border-radius: 30px;     /* Bo cong tròn trịa */
-                height: 50px;            /* Chiều cao */
-                border: none;            /* Bỏ viền xấu mặc định */
-                font-weight: bold;       /* Chữ đậm */
-                font-size: 18px;         /* Cỡ chữ to hơn chút */
-                box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4); /* Đổ bóng mờ ảo */
-                transition: 0.3s;        /* Hiệu ứng mượt */
-            }
-
-            /* Hiệu ứng khi di chuột vào (Hover) riêng cho nút này */
-            div[data-testid="column"]:nth-of-type(2) .stButton > button:hover {
-                transform: translateY(-2px); /* Nút bay lên nhẹ */
-                box-shadow: 0 6px 20px rgba(76, 175, 80, 0.6); /* Bóng đậm hơn */
-                color: #ffffff;
-            }
-            </style>
-        """, unsafe_allow_html=True)
-        
-        st.subheader("🗂️ Thẻ ghi nhớ thông minh")
         c1, c2 = st.columns([1,3], vertical_alignment="bottom")
         sl = c1.number_input("Số thẻ", 1, 50, 5)
         if c2.button("🗂️ Tạo Flashcards", use_container_width=True):
