@@ -9,7 +9,7 @@ from pptx import Presentation
 import io
 
 # Cấu hình trang
-st.set_page_config(page_title="AI Học Tập Đa Năng", layout="wide", page_icon="📚")
+st.set_page_config(page_title="Hệ Thống Hỗ Trợ Học Tập", layout="wide", page_icon="📚")
 
 # --- CẤU HÌNH API ---
 try:
@@ -99,11 +99,11 @@ def lay_dot_code(text):
 # ======================================================
 # GIAO DIỆN CHÍNH
 # ======================================================
-st.title("📚 Hệ Thống Học Tập Đa Năng")
+st.title("📚 Hệ Thống Học Tập Tích Hợp Gemini 2.0 Flash")
 
 with st.sidebar:
     st.header("📂 Nạp tài liệu")
-    st.caption("Hỗ trợ: PDF, Word, Excel, PowerPoint & ZIP")
+    st.caption("Hỗ trợ: PDF, Word, Excel, PowerPoint và ZIP")
     
     # Cho phép chọn nhiều loại file
     uploaded_files = st.file_uploader("Tải file lên:", 
@@ -153,9 +153,9 @@ with st.sidebar:
                 if ds_ten:
                     st.session_state['noi_dung'] = noi_dung_tong
                     st.session_state['ds_file'] = ds_ten
-                    st.success(f"✅ Đã đọc xong {len(ds_ten)} tài liệu!")
+                    st.success(f"✅ Đã xử lý xong {len(ds_ten)} tài liệu!")
                 else:
-                    st.warning("Không tìm thấy nội dung văn bản nào.")
+                    st.warning("Không tìm thấy file nào.")
 
     if 'ds_file' in st.session_state:
         st.write("---")
@@ -170,8 +170,11 @@ if 'noi_dung' in st.session_state:
     # 1. CHAT
     with t1:
         if "msg" not in st.session_state: st.session_state.msg = []
+        # -- Hiển thị lịch sử chat 
         for m in st.session_state.msg: 
             with st.chat_message(m["role"]): st.markdown(m["content"])
+        st.caption("⚠️ **Lưu ý:** AI không biết thông tin ngoài lề, chỉ cố định trong file.")
+        # -- Xử lý nhập liệu
         if p := st.chat_input("Hỏi gì đó..."):
             st.session_state.msg.append({"role": "user", "content": p})
             with st.chat_message("user"): st.markdown(p)
