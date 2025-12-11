@@ -212,10 +212,12 @@ if 'noi_dung' in st.session_state:
 
     # 3. FLASHCARDS
     with t3:
-        if st.button("Tạo Flashcards"):
+        c1, c2 = st.columns([1,3])
+        sl = c1.number_input("Số thẻ", 1, 50, 5)
+        if c2.button("Tạo Flashcards"):
             with st.spinner("Đang tạo..."):
                 try:
-                    p = "Tạo 10 thẻ JSON list: [{'q':'...','a':'...'}]"
+                    p = f"Tạo {sl} thẻ JSON list: [{'q':'...','a':'...'}]"
                     res = model.generate_content(f"{p}\nNội dung: {st.session_state['noi_dung']}")
                     st.session_state['fc'] = json.loads(lay_json(res.text))
                 except: st.error("Lỗi tạo thẻ.")
