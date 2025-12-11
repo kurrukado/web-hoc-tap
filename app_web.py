@@ -133,7 +133,7 @@ with st.sidebar:
                                       accept_multiple_files=True)
     
     if uploaded_files:
-        if st.button("🔄 Xử lý tài liệu"):
+        if st.button("🔄 Xử lý tài liệu", use_container_width=True):
             with st.spinner("Đang đọc và phân tích đa định dạng..."):
                 noi_dung_tong = ""
                 ds_ten = []
