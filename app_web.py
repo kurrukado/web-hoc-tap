@@ -41,7 +41,7 @@ try:
         model = genai.GenerativeModel(selected_model)
         
         st.sidebar.success(f"Đang dùng: \n{selected_model}")
-        st.info("Chuyển model nếu hết lượt")
+        st.sidebar.info("Chuyển model nếu hết lượt")
         
 except Exception as e:
     st.error(f"Lỗi cấu hình: {e}")
