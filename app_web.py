@@ -3,10 +3,13 @@ import google.generativeai as genai
 from pypdf import PdfReader
 import json
 import zipfile
+import pandas as pd
+from docx import Document
+from pptx import Presentation
 import io
 
 # Cấu hình trang
-st.set_page_config(page_title="AI Ôn Tập (Hỗ trợ ZIP)", layout="wide", page_icon="📦")
+st.set_page_config(page_title="AI Học Tập Đa Năng", layout="wide", page_icon="📚")
 
 # --- CẤU HÌNH API ---
 try:
@@ -21,9 +24,11 @@ try:
 except Exception as e:
     st.error(f"Lỗi cấu hình: {e}")
 
-# --- CÁC HÀM XỬ LÝ ---
-def doc_pdf_tu_bytes(file_bytes):
-    """Đọc PDF từ dữ liệu thô (dùng cho cả file lẻ và file trong zip)"""
+# ======================================================
+# CÁC HÀM ĐỌC FILE (Word, Excel, PPT, PDF)
+# ======================================================
+
+def doc_pdf(file_bytes):
     try:
         reader = PdfReader(file_bytes)
         text = ""
@@ -33,6 +38,52 @@ def doc_pdf_tu_bytes(file_bytes):
         return text
     except: return ""
 
+def doc_word(file_bytes):
+    """Đọc file .docx"""
+    try:
+        doc = Document(file_bytes)
+        text = []
+        for para in doc.paragraphs:
+            text.append(para.text)
+        return "\n".join(text)
+    except: return ""
+
+def doc_pptx(file_bytes):
+    """Đọc file .pptx (PowerPoint)"""
+    try:
+        prs = Presentation(file_bytes)
+        text = []
+        for slide in prs.slides:
+            for shape in slide.shapes:
+                if hasattr(shape, "text"):
+                    text.append(shape.text)
+        return "\n".join(text)
+    except: return ""
+
+def doc_excel(file_bytes):
+    """Đọc file .xlsx (Excel) - Chuyển toàn bộ bảng thành text"""
+    try:
+        df = pd.read_excel(file_bytes)
+        return df.to_string() # Chuyển bảng số liệu thành dạng chữ để AI đọc
+    except: return ""
+
+def xu_ly_file_upload(file_obj, ten_file):
+    """Hàm điều phối: Nhìn đuôi file để gọi hàm đọc đúng"""
+    ten_file = ten_file.lower()
+    noi_dung = ""
+    
+    if ten_file.endswith('.pdf'):
+        noi_dung = doc_pdf(file_obj)
+    elif ten_file.endswith('.docx'):
+        noi_dung = doc_word(file_obj)
+    elif ten_file.endswith('.pptx'):
+        noi_dung = doc_pptx(file_obj)
+    elif ten_file.endswith('.xlsx') or ten_file.endswith('.xls'):
+        noi_dung = doc_excel(file_obj)
+        
+    return noi_dung
+
+# --- CÁC HÀM PHỤ TRỢ ---
 def lay_json(text):
     text = text.replace("```json", "").replace("```", "").strip()
     s = text.find("[")
@@ -45,23 +96,26 @@ def lay_dot_code(text):
     if s != -1: return text[s:]
     return text
 
-# --- GIAO DIỆN CHÍNH ---
-st.title("📦 Hệ Thống Ôn Tập (Hỗ trợ file nén ZIP)")
+# ======================================================
+# GIAO DIỆN CHÍNH
+# ======================================================
+st.title("📚 Hệ Thống Học Tập Đa Năng")
 
 with st.sidebar:
     st.header("📂 Nạp tài liệu")
-    st.info("Mẹo: Nén cả thư mục thành file .zip để tải lên 1 lần!")
+    st.caption("Hỗ trợ: PDF, Word, Excel, PowerPoint & ZIP")
     
-    # Cho phép chọn cả file PDF và file ZIP
-    uploaded_files = st.file_uploader("Tải file PDF hoặc ZIP:", type=['pdf', 'zip'], accept_multiple_files=True)
+    # Cho phép chọn nhiều loại file
+    uploaded_files = st.file_uploader("Tải file lên:", 
+                                      type=['pdf', 'docx', 'pptx', 'xlsx', 'zip'], 
+                                      accept_multiple_files=True)
     
     if uploaded_files:
         if st.button("🔄 Xử lý tài liệu"):
-            with st.spinner("Đang giải nén và đọc file..."):
+            with st.spinner("Đang đọc và phân tích đa định dạng..."):
                 noi_dung_tong = ""
                 ds_ten = []
                 
-                # Thanh tiến trình
                 bar = st.progress(0)
                 total_files = len(uploaded_files)
                 
@@ -70,27 +124,28 @@ with st.sidebar:
                     if file.name.lower().endswith('.zip'):
                         try:
                             with zipfile.ZipFile(file) as z:
-                                # Lọc lấy các file PDF trong zip
-                                pdf_files = [f for f in z.namelist() if f.lower().endswith('.pdf') and not f.startswith('__MACOSX')]
-                                
-                                for pdf_name in pdf_files:
-                                    with z.open(pdf_name) as pdf_data:
-                                        # Đọc nội dung PDF từ trong zip
-                                        txt = doc_pdf_tu_bytes(pdf_data)
-                                        if txt:
-                                            noi_dung_tong += f"\n--- FILE ZIP/{pdf_name} ---\n{txt}\n"
-                                            ds_ten.append(f"📦 {pdf_name}")
+                                # Lấy danh sách file trong zip
+                                all_files = z.namelist()
+                                for sub_file in all_files:
+                                    # Bỏ qua file hệ thống rác của Mac/Windows
+                                    if not sub_file.startswith('__') and '.' in sub_file:
+                                        with z.open(sub_file) as f_data:
+                                            # Đọc dữ liệu binary vào bộ nhớ đệm
+                                            bytes_io = io.BytesIO(f_data.read())
+                                            txt = xu_ly_file_upload(bytes_io, sub_file)
+                                            if txt:
+                                                noi_dung_tong += f"\n--- FILE ZIP/{sub_file} ---\n{txt}\n"
+                                                ds_ten.append(f"📦 {sub_file}")
                         except Exception as e:
-                            st.error(f"Lỗi đọc zip {file.name}: {e}")
+                            st.error(f"Lỗi zip {file.name}: {e}")
 
-                    # TRƯỜNG HỢP 2: LÀ FILE PDF THƯỜNG
-                    elif file.name.lower().endswith('.pdf'):
-                        txt = doc_pdf_tu_bytes(file)
+                    # TRƯỜNG HỢP 2: LÀ FILE THƯỜNG (PDF, DOCX, PPTX...)
+                    else:
+                        txt = xu_ly_file_upload(file, file.name)
                         if txt:
                             noi_dung_tong += f"\n--- FILE: {file.name} ---\n{txt}\n"
                             ds_ten.append(file.name)
                     
-                    # Cập nhật tiến trình
                     bar.progress((i + 1) / total_files)
                 
                 bar.empty()
@@ -100,7 +155,7 @@ with st.sidebar:
                     st.session_state['ds_file'] = ds_ten
                     st.success(f"✅ Đã đọc xong {len(ds_ten)} tài liệu!")
                 else:
-                    st.warning("Không tìm thấy nội dung PDF nào.")
+                    st.warning("Không tìm thấy nội dung văn bản nào.")
 
     if 'ds_file' in st.session_state:
         st.write("---")
@@ -108,9 +163,7 @@ with st.sidebar:
         for f in st.session_state['ds_file']:
             st.code(f, language="text")
 
-# --- PHẦN CHỨC NĂNG (CHAT, QUIZ, FLASHCARDS, MINDMAP) ---
-# (Phần này giữ nguyên logic cũ, chỉ copy lại để code hoàn chỉnh)
-
+# --- PHẦN CHỨC NĂNG (GIỮ NGUYÊN NHƯ CŨ) ---
 if 'noi_dung' in st.session_state:
     t1, t2, t3, t4 = st.tabs(["💬 Chat", "📝 Trắc Nghiệm", "🗂️ Flashcards", "🧠 Sơ Đồ Tư Duy"])
 
@@ -185,4 +238,4 @@ if 'noi_dung' in st.session_state:
             try: st.graphviz_chart(st.session_state['map'])
             except: st.error("Mã hình lỗi.")
 else:
-    st.info("👈 Nén tài liệu thành file ZIP rồi tải lên.")
+    st.info("👈 Tải file PDF, Word, Excel, PowerPoint hoặc ZIP lên để học!")
