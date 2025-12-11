@@ -121,7 +121,7 @@ def lay_dot_code(text):
 # ======================================================
 # GIAO DIỆN CHÍNH
 # ======================================================
-st.title("📚 Hệ Thống Học Tập Tích Hợp Gemini 2.0 Flash")
+st.title("📚 Hệ Thống Học Tập Tích Hợp Gemini")
 
 with st.sidebar:
     st.header("📂 Nạp tài liệu")
