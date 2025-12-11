@@ -211,20 +211,59 @@ if 'noi_dung' in st.session_state:
             st.info(f"Điểm: {score}/{len(st.session_state['quiz'])}")
 
     # 3. FLASHCARDS
+   # 3. FLASHCARDS
     with t3:
-        c1, c2 = st.columns([1,3], vertical_alignment="bottom")
-        sl = c1.number_input("Số thẻ", 1, 50, 5)
-        if c2.button("🗂️ Tạo Flashcards", use_container_width=True):
-            with st.spinner("Đang tạo..."):
-                try:
-                    p = f"Tạo {sl} câu hỏi trắc nghiệm JSON list. Key là \"q\" và \"a\". Mẫu: [{{ \"q\": \"Câu hỏi?\", \"a\": \"Đáp án\" }}]"
-                    res = model.generate_content(f"{p}\nNội dung: {st.session_state['noi_dung']}")
+        # --- CSS TÙY CHỈNH KÍCH THƯỚC NÚT ---
+        st.markdown("""
+            <style>
+            /* Tìm nút ở cột thứ 2 và ép nó theo kích thước mình muốn */
+            div[data-testid="column"]:nth-of-type(2) .stButton > button {
+                width: 180px !important; /* <--- CHỈNH SỐ NÀY (VD: 150px, 200px) */
+                height: 45px;            /* Chiều cao */
+                border-radius: 25px;     /* Bo tròn */
+                background: #4CAF50;     /* Màu nền xanh */
+                color: white;            /* Màu chữ */
+                border: none;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+                transition: 0.3s;
+            }
+            
+            /* Hiệu ứng di chuột */
+            div[data-testid="column"]:nth-of-type(2) .stButton > button:hover {
+                background: #45a049;
+                transform: scale(1.05);
+            }
+            </style>
+        """, unsafe_allow_html=True)
+        
+        # Chia cột: Cột 2 rộng gấp 3 lần cột 1 để có chỗ chứa nút
+        c1, c2 = st.columns([1, 3], vertical_alignment="bottom")
+        
+        # Cột 1: Ô nhập
+        sl = c1.number_input("Số thẻ:", min_value=1, max_value=50, value=5)
+        
+        # Cột 2: Nút bấm
+        # LƯU Ý: Đã xóa use_container_width=True để CSS tự quyết định độ rộng
+        if c2.button("🚀 Tạo Flashcards"):
+            
+            # --- LOGIC TẠO THẺ (GIỮ NGUYÊN) ---
+            if 'noi_dung' not in st.session_state or not st.session_state['noi_dung']:
+                st.warning("⚠️ Chưa có tài liệu!")
+            else:
+                with st.spinner("Đang tạo..."):
+                    try:
+                        p = f"Tạo {sl} cặp câu hỏi - đáp án ngắn gọn JSON list. Dùng ngoặc kép. Mẫu: [{{ \"q\": \"Hỏi?\", \"a\": \"Đáp.\" }}]"
+                        res = model.generate_content(f"{p}\n\nNội dung:\n{st.session_state['noi_dung']}")
+                        st.session_state['fc'] = json.loads(lay_json(res.text))
+                        st.success("✅ Xong!")
+                    except Exception as e:
+                        st.error(f"Lỗi: {e}")
 
-                    st.session_state['fc'] = json.loads(lay_json(res.text))
-                except: st.error("Lỗi tạo thẻ.")
+        # --- HIỂN THỊ KẾT QUẢ ---
         if 'fc' in st.session_state:
+            st.write("---")
             for c in st.session_state['fc']:
-                with st.expander(c.get('q','?')): st.info(c.get('a','!'))
+                with st.expander(c.get('q', '?')): st.info(c.get('a', '!'))
 
     # 4. MINDMAP
     with t4:
