@@ -90,4 +90,93 @@ if 'noi_dung' in st.session_state:
                 try:
                     res = model.generate_content(f"Dựa vào tài liệu:\n{st.session_state['noi_dung']}\nTrả lời: {p}")
                     st.markdown(res.text)
-                    st.session_
+                    st.session_state.msg.append({"role": "assistant", "content": res.text})
+                except: st.error("Lỗi API.")
+
+    # TAB 2: QUIZ
+    with tab2:
+        col1, col2 = st.columns([1,3])
+        sl = col1.number_input("Số câu", 1, 50, 5)
+        if col2.button("Tạo Đề"):
+            with st.spinner("Đang tạo..."):
+                try:
+                    p = f"Tạo {sl} câu trắc nghiệm JSON list: [{{'question':'...','options':['A...'],'correct':'A','explain':'...'}}]"
+                    res = model.generate_content(f"{p}\nNội dung: {st.session_state['noi_dung']}")
+                    st.session_state['quiz'] = json.loads(lay_json(res.text))
+                except: st.error("Thử lại nhé!")
+        
+        if 'quiz' in st.session_state:
+            score = 0
+            for i, q in enumerate(st.session_state['quiz']):
+                st.divider()
+                st.markdown(f"**{i+1}.** {q['question']}")
+                ch = st.radio("Chọn:", q['options'], key=f"q{i}", index=None)
+                if ch:
+                    if ch[0] == q['correct'][0]:
+                        st.success("Đúng!")
+                        score+=1
+                    else: st.error(f"Sai. Đáp án: {q['correct']}")
+                    with st.expander("Giải thích"): st.write(q['explain'])
+            st.info(f"Điểm: {score}/{len(st.session_state['quiz'])}")
+
+    # TAB 3: FLASHCARDS
+    with tab3:
+        if st.button("Tạo Flashcards"):
+            with st.spinner("Đang tạo..."):
+                try:
+                    p = "Tạo 10 thẻ JSON list: [{'q':'...','a':'...'}]"
+                    res = model.generate_content(f"{p}\nNội dung: {st.session_state['noi_dung']}")
+                    st.session_state['fc'] = json.loads(lay_json(res.text))
+                except: st.error("Lỗi tạo thẻ.")
+        if 'fc' in st.session_state:
+            for c in st.session_state['fc']:
+                with st.expander(c.get('q','?')): st.info(c.get('a','!'))
+
+    # TAB 4: SƠ ĐỒ TƯ DUY (TÍNH NĂNG MỚI)
+    with tab4:
+        st.subheader("Hệ thống hóa kiến thức bằng hình ảnh")
+        st.info("Mẹo: Nếu sơ đồ quá rối, hãy yêu cầu AI vẽ lại đơn giản hơn.")
+        
+        col_map1, col_map2 = st.columns([1, 4])
+        with col_map1:
+            style = st.selectbox("Chọn kiểu:", ["Top-Down (Trên xuống)", "Left-Right (Trái qua phải)"])
+        
+        with col_map2:
+            if st.button("🎨 Vẽ Sơ Đồ Ngay"):
+                with st.spinner("Đang phân tích và vẽ sơ đồ..."):
+                    rankdir = "TB" if style == "Top-Down (Trên xuống)" else "LR"
+                    
+                    # Prompt đặc biệt để tạo mã Graphviz
+                    prompt_map = f"""
+                    Hãy tóm tắt nội dung bài học thành một Sơ đồ tư duy (Mind Map).
+                    Yêu cầu Output: Chỉ trả về mã Graphviz DOT (nằm trong ```dot ... ```).
+                    
+                    Cấu hình Graphviz:
+                    - Sử dụng `digraph G {{ ... }}`
+                    - Thêm thuộc tính: `rankdir="{rankdir}"; node [shape=box, style=filled, fillcolor="#E8F5E9", fontname="Arial"];`
+                    - Nội dung phải Tiếng Việt.
+                    - Root node là chủ đề chính của tài liệu.
+                    - Các nhánh con là các ý chính.
+                    - Giữ cấu trúc đơn giản, dễ nhìn.
+                    """
+                    
+                    try:
+                        res = model.generate_content(f"{prompt_map}\n\nNội dung: {st.session_state['noi_dung']}")
+                        dot_code = lay_dot_code(res.text)
+                        
+                        # Lưu vào session để không bị mất khi đổi tab
+                        st.session_state['mindmap_code'] = dot_code
+                    except Exception as e:
+                        st.error(f"Không vẽ được sơ đồ: {e}")
+
+        # Hiển thị sơ đồ
+        if 'mindmap_code' in st.session_state:
+            try:
+                st.graphviz_chart(st.session_state['mindmap_code'])
+            except Exception as e:
+                st.error("Lỗi hiển thị hình ảnh. AI đã tạo mã lỗi.")
+                with st.expander("Xem mã lỗi"):
+                    st.code(st.session_state['mindmap_code'])
+
+else:
+    st.info("👈 Tải file PDF lên để bắt đầu.")
