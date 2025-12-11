@@ -212,9 +212,9 @@ if 'noi_dung' in st.session_state:
 
     # 3. FLASHCARDS
     with t3:
-        c1, c2 = st.columns([1,3])
+        c1, c2 = st.columns([1,3], vertical_alignment="bottom")
         sl = c1.number_input("Số thẻ", 1, 50, 5)
-        if c2.button("🗂️ Tạo Flashcards"):
+        if c2.button("🗂️ Tạo Flashcards", use_container_width=True):
             with st.spinner("Đang tạo..."):
                 try:
                     p = f"Tạo {sl} câu hỏi trắc nghiệm JSON list. Key là \"q\" và \"a\". Mẫu: [{{ \"q\": \"Câu hỏi?\", \"a\": \"Đáp án\" }}]"
