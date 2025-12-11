@@ -40,7 +40,8 @@ try:
         # Khởi tạo model dựa trên lựa chọn của người dùng
         model = genai.GenerativeModel(selected_model)
         
-        st.sidebar.success(f"Đang dùng: {selected_model}")
+        st.sidebar.success(f"Đang dùng: \n{selected_model}")
+        st.info("Chuyển model nếu hết lượt")
         
 except Exception as e:
     st.error(f"Lỗi cấu hình: {e}")
@@ -208,9 +209,9 @@ if 'noi_dung' in st.session_state:
 
     # 2. QUIZ
     with t2:
-        c1, c2 = st.columns([1,3])
+        c1, c2 = st.columns([1,3], vertical_alignment="bottom")
         sl = c1.number_input("Số câu", 1, 50, 5)
-        if c2.button("🚀 Tạo Đề"):
+        if c2.button("🚀 Tạo Đề", use_container_width=True):
             with st.spinner("Đang tạo..."):
                 try:
                     p = f"Tạo {sl} câu trắc nghiệm JSON list: [{{'question':'...','options':['A...'],'correct':'A','explain':'...'}}]"
