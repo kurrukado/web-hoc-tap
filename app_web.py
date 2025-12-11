@@ -25,8 +25,8 @@ try:
         model_options = [
             "gemini-2.5-flash",       # Nhanh, nhẹ, limit cao (Khuyên dùng)
             "gemini-2.5-flash-lite",         # Thông minh hơn, nhưng limit thấp hơn
-            "gemini-2.5-flash-tts",   # Bản thử nghiệm mới nhất (nếu có)
-                      # Bản cũ, dùng chống cháy
+            "gemma-3-27b",            # Bản Gemma: Thử nghiệm cho biết (thông minh nhất dòng Gemma)
+            "gemma-3-12b"
         ]
         
         selected_model = st.sidebar.selectbox(
