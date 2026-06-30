@@ -24,9 +24,8 @@ try:
     if api_key:
         # Danh sách model tối ưu nhất hiện tại
         model_options = [
-            "gemini-2.5-flash",       # [KHUYÊN DÙNG] Nhanh, thông minh, cân bằng nhất
-            "gemini-2.5-flash-lite",  # Siêu tiết kiệm limit
-            "gemma-3-27b",            # Model nguồn mở mới nhất của Google
+            "gemini-3.5-flash",       # [KHUYÊN DÙNG] Nhanh, thông minh, cân bằng nhất
+            "gemini-3.5-flash-lite",  # Siêu tiết kiệm limit
         ]
         
         selected_model = st.sidebar.selectbox(
